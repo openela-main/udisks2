@@ -1,0 +1,49 @@
+From 223256777f6e269b8501d95a64c4c6095a7a8a3e Mon Sep 17 00:00:00 2001
+From: Tomas Bzatek <tbzatek@redhat.com>
+Date: Sat, 1 Jan 2022 22:02:17 +0100
+Subject: [PATCH] udiskslinuxfilesystem: Fix GError ownership
+
+---
+ src/udiskslinuxfilesystem.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/src/udiskslinuxfilesystem.c b/src/udiskslinuxfilesystem.c
+index f7c99757a..a8390a044 100644
+--- a/src/udiskslinuxfilesystem.c
++++ b/src/udiskslinuxfilesystem.c
+@@ -1739,7 +1739,7 @@ handle_resize (UDisksFilesystem      *filesystem,
+   object = udisks_daemon_util_dup_object (filesystem, &error);
+   if (object == NULL)
+     {
+-      g_dbus_method_invocation_take_error (invocation, error);
++      g_dbus_method_invocation_return_gerror (invocation, error);
+       goto out;
+     }
+ 
+@@ -1921,7 +1921,7 @@ handle_repair (UDisksFilesystem      *filesystem,
+   object = udisks_daemon_util_dup_object (filesystem, &error);
+   if (object == NULL)
+     {
+-      g_dbus_method_invocation_take_error (invocation, error);
++      g_dbus_method_invocation_return_gerror (invocation, error);
+       goto out;
+     }
+ 
+@@ -2089,7 +2089,7 @@ handle_check (UDisksFilesystem      *filesystem,
+   object = udisks_daemon_util_dup_object (filesystem, &error);
+   if (object == NULL)
+     {
+-      g_dbus_method_invocation_take_error (invocation, error);
++      g_dbus_method_invocation_return_gerror (invocation, error);
+       goto out;
+     }
+ 
+@@ -2257,7 +2257,7 @@ handle_take_ownership (UDisksFilesystem      *filesystem,
+   object = udisks_daemon_util_dup_object (filesystem, &error);
+   if (object == NULL)
+     {
+-      g_dbus_method_invocation_take_error (invocation, error);
++      g_dbus_method_invocation_return_gerror (invocation, error);
+       goto out;
+     }
+ 

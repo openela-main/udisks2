@@ -1,0 +1,190 @@
+From e039516b103eb9749a3e261c5ee1a9bc110676cf Mon Sep 17 00:00:00 2001
+From: Tomas Bzatek <tbzatek@redhat.com>
+Date: Fri, 26 Jun 2020 17:42:32 +0200
+Subject: [PATCH 1/8] daemon: Always flush interface property changes
+
+Setting properties on a GDBusInterfaceSkeleton from the main thread
+as a result of uevent is somewhat racy to clients that are waiting
+for a method call to return that is processed in a separate thread
+by the daemon. Perhaps there's a race in the GDBus worker thread
+that processes changes from both threads and send them out on the bus.
+
+Explicit flush on GDBusInterfaceSkeleton interfaces seems to fix
+the issue. Such approach was used before on some places, this change
+adds explicit flushes at all places where properties may change.
+---
+ src/udiskslinuxblock.c          | 2 ++
+ src/udiskslinuxdrive.c          | 1 +
+ src/udiskslinuxdriveata.c       | 5 +++++
+ src/udiskslinuxencrypted.c      | 5 +++++
+ src/udiskslinuxfilesystem.c     | 3 +++
+ src/udiskslinuxloop.c           | 1 +
+ src/udiskslinuxmdraid.c         | 1 +
+ src/udiskslinuxpartition.c      | 2 ++
+ src/udiskslinuxpartitiontable.c | 1 +
+ src/udiskslinuxswapspace.c      | 1 +
+ 10 files changed, 22 insertions(+)
+
+diff --git a/src/udiskslinuxblock.c b/src/udiskslinuxblock.c
+index ddc7fe1f..34d73f0e 100644
+--- a/src/udiskslinuxblock.c
++++ b/src/udiskslinuxblock.c
+@@ -893,6 +893,7 @@ update_configuration (UDisksLinuxBlock  *block,
+       configuration = g_variant_new ("a(sa{sv})", NULL);
+     }
+   udisks_block_set_configuration (UDISKS_BLOCK (block), configuration);
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (block));
+ }
+ 
+ #ifdef HAVE_LIBMOUNT_UTAB
+@@ -1280,6 +1281,7 @@ udisks_linux_block_update (UDisksLinuxBlock       *block,
+   update_mdraid (block, device, drive, object_manager);
+ 
+  out:
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (block));
+   if (device != NULL)
+     g_object_unref (device);
+   if (drive != NULL)
+diff --git a/src/udiskslinuxdrive.c b/src/udiskslinuxdrive.c
+index e9dd7117..28a90ce9 100644
+--- a/src/udiskslinuxdrive.c
++++ b/src/udiskslinuxdrive.c
+@@ -950,6 +950,7 @@ udisks_linux_drive_update (UDisksLinuxDrive       *drive,
+   ret = update_configuration (drive, object);
+ 
+  out:
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (drive));
+   if (device != NULL)
+     g_clear_object (&device);
+ 
+diff --git a/src/udiskslinuxdriveata.c b/src/udiskslinuxdriveata.c
+index d65f3254..4ba66d09 100644
+--- a/src/udiskslinuxdriveata.c
++++ b/src/udiskslinuxdriveata.c
+@@ -339,6 +339,8 @@ udisks_linux_drive_ata_update (UDisksLinuxDriveAta    *drive,
+   update_security (drive, device);
+ 
+  out:
++  /* ensure property changes are sent before the method return */
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (drive));
+   if (device != NULL)
+     g_object_unref (device);
+ 
+@@ -681,6 +683,9 @@ udisks_linux_drive_ata_refresh_smart_sync (UDisksLinuxDriveAta  *drive,
+   /* update stats again to account for the IO we just did to read the SMART info */
+   update_io_stats (drive, device);
+ 
++  /* ensure property changes are sent before the method return */
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (drive));
++
+  out:
+   g_clear_object (&device);
+   if (d != NULL)
+diff --git a/src/udiskslinuxencrypted.c b/src/udiskslinuxencrypted.c
+index 73c78873..8a230fda 100644
+--- a/src/udiskslinuxencrypted.c
++++ b/src/udiskslinuxencrypted.c
+@@ -237,6 +237,8 @@ udisks_linux_encrypted_update (UDisksLinuxEncrypted   *encrypted,
+     update_metadata_size (encrypted, object);
+ 
+   udisks_linux_block_encrypted_unlock (block);
++
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (encrypted));
+ }
+ 
+ /* ---------------------------------------------------------------------------------------------------- */
+@@ -630,6 +632,9 @@ handle_unlock (UDisksEncrypted        *encrypted,
+                                         g_udev_device_get_sysfs_attr (cleartext_device->udev_device, "dm/uuid"),
+                                         caller_uid);
+ 
++  /* ensure property changes are sent before the method return */
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (encrypted));
++
+   udisks_encrypted_complete_unlock (encrypted,
+                                     invocation,
+                                     g_dbus_object_get_object_path (G_DBUS_OBJECT (cleartext_object)));
+diff --git a/src/udiskslinuxfilesystem.c b/src/udiskslinuxfilesystem.c
+index 669fc40b..3ae11c32 100644
+--- a/src/udiskslinuxfilesystem.c
++++ b/src/udiskslinuxfilesystem.c
+@@ -277,6 +277,8 @@ udisks_linux_filesystem_update (UDisksLinuxFilesystem  *filesystem,
+   if (! skip_fs_size)
+     udisks_filesystem_set_size (UDISKS_FILESYSTEM (filesystem), get_filesystem_size (object));
+ 
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (filesystem));
++
+   g_object_unref (device);
+ }
+ 
+@@ -1865,6 +1867,7 @@ handle_resize (UDisksFilesystem      *filesystem,
+                                                  UDISKS_DEFAULT_WAIT_TIMEOUT);
+ 
+   udisks_filesystem_set_size (filesystem, get_filesystem_size (UDISKS_LINUX_BLOCK_OBJECT (object)));
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (filesystem));
+   udisks_filesystem_complete_resize (filesystem, invocation);
+   udisks_simple_job_complete (UDISKS_SIMPLE_JOB (job), TRUE, NULL);
+ 
+diff --git a/src/udiskslinuxloop.c b/src/udiskslinuxloop.c
+index 6c8a4561..5d7e3553 100644
+--- a/src/udiskslinuxloop.c
++++ b/src/udiskslinuxloop.c
+@@ -187,6 +187,7 @@ udisks_linux_loop_update (UDisksLinuxLoop        *loop,
+     }
+   udisks_loop_set_setup_by_uid (UDISKS_LOOP (loop), setup_by_uid);
+ 
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (loop));
+   g_object_unref (device);
+ }
+ 
+diff --git a/src/udiskslinuxmdraid.c b/src/udiskslinuxmdraid.c
+index 85fc2a3b..7eca9764 100644
+--- a/src/udiskslinuxmdraid.c
++++ b/src/udiskslinuxmdraid.c
+@@ -512,6 +512,7 @@ udisks_linux_mdraid_update (UDisksLinuxMDRaid       *mdraid,
+                                                                                 uuid));
+ 
+  out:
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (mdraid));
+   if (raid_data)
+       bd_md_examine_data_free (raid_data);
+   g_free (sync_completed);
+diff --git a/src/udiskslinuxpartition.c b/src/udiskslinuxpartition.c
+index 97ba02fe..ff0fdfc0 100644
+--- a/src/udiskslinuxpartition.c
++++ b/src/udiskslinuxpartition.c
+@@ -312,6 +312,8 @@ udisks_linux_partition_update (UDisksLinuxPartition   *partition,
+   udisks_partition_set_is_container (UDISKS_PARTITION (partition), is_container);
+   udisks_partition_set_is_contained (UDISKS_PARTITION (partition), is_contained);
+ 
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (partition));
++
+   g_free (name);
+   g_clear_object (&device);
+   g_clear_object (&disk_block_object);
+diff --git a/src/udiskslinuxpartitiontable.c b/src/udiskslinuxpartitiontable.c
+index b26849bc..e43a0708 100644
+--- a/src/udiskslinuxpartitiontable.c
++++ b/src/udiskslinuxpartitiontable.c
+@@ -146,6 +146,7 @@ udisks_linux_partition_table_update (UDisksLinuxPartitionTable  *table,
+ 
+   udisks_partition_table_set_partitions (UDISKS_PARTITION_TABLE (table),
+                                          partition_object_paths);
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (table));
+ 
+ 
+   g_free (partition_object_paths);
+diff --git a/src/udiskslinuxswapspace.c b/src/udiskslinuxswapspace.c
+index ee103528..bb47f3d4 100644
+--- a/src/udiskslinuxswapspace.c
++++ b/src/udiskslinuxswapspace.c
+@@ -127,6 +127,7 @@ udisks_linux_swapspace_update (UDisksLinuxSwapspace   *swapspace,
+     active = TRUE;
+   udisks_swapspace_set_active (UDISKS_SWAPSPACE (swapspace), active);
+ 
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (swapspace));
+   g_object_unref (device);
+ }
+ 
+-- 
+2.26.2
+

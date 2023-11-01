@@ -1,0 +1,27 @@
+From 7fe04e70dc5a5ccf621a0beacc6d4b9e904037df Mon Sep 17 00:00:00 2001
+From: Tomas Bzatek <tbzatek@redhat.com>
+Date: Fri, 13 Nov 2020 16:57:24 +0100
+Subject: [PATCH 2/2] udiskslinuxmanager: Trigger uevent after loop device
+ setup
+
+---
+ src/udiskslinuxmanager.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/udiskslinuxmanager.c b/src/udiskslinuxmanager.c
+index 1bbf980a..e0a83a80 100644
+--- a/src/udiskslinuxmanager.c
++++ b/src/udiskslinuxmanager.c
+@@ -430,6 +430,9 @@ handle_loop_setup (UDisksManager          *object,
+   error = NULL;
+   wait_data.loop_device = loop_device;
+   wait_data.path = path;
++  udisks_daemon_util_trigger_uevent_sync (manager->daemon,
++                                          loop_device,
++                                          UDISKS_DEFAULT_WAIT_TIMEOUT);
+   loop_object = udisks_daemon_wait_for_object_sync (manager->daemon,
+                                                     wait_for_loop_object,
+                                                     &wait_data,
+-- 
+2.26.2
+

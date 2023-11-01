@@ -1,0 +1,110 @@
+From 39d13907f712269bb9debd0fd8a0852347c98136 Mon Sep 17 00:00:00 2001
+From: Tomas Bzatek <tbzatek@redhat.com>
+Date: Fri, 26 Jun 2020 17:55:53 +0200
+Subject: [PATCH 2/8] lvm2: Always flush interface property changes
+
+---
+ modules/lvm2/udiskslinuxlogicalvolume.c     | 3 +++
+ modules/lvm2/udiskslinuxphysicalvolume.c    | 2 ++
+ modules/lvm2/udiskslinuxvdovolume.c         | 2 ++
+ modules/lvm2/udiskslinuxvolumegroup.c       | 3 +++
+ modules/lvm2/udiskslinuxvolumegroupobject.c | 3 +++
+ 5 files changed, 13 insertions(+)
+
+diff --git a/modules/lvm2/udiskslinuxlogicalvolume.c b/modules/lvm2/udiskslinuxlogicalvolume.c
+index 373cee2e..c0f074d8 100644
+--- a/modules/lvm2/udiskslinuxlogicalvolume.c
++++ b/modules/lvm2/udiskslinuxlogicalvolume.c
+@@ -229,6 +229,8 @@ udisks_linux_logical_volume_update (UDisksLinuxLogicalVolume     *logical_volume
+       logical_volume->needs_udev_hack = FALSE;
+       g_free (dev_file);
+     }
++
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (iface));
+ }
+ 
+ void
+@@ -248,6 +250,7 @@ udisks_linux_logical_volume_update_etctabs (UDisksLinuxLogicalVolume     *logica
+   udisks_logical_volume_set_child_configuration (iface,
+                                                  udisks_linux_find_child_configuration (daemon,
+                                                                                         uuid));
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (iface));
+ }
+ 
+ /* ---------------------------------------------------------------------------------------------------- */
+diff --git a/modules/lvm2/udiskslinuxphysicalvolume.c b/modules/lvm2/udiskslinuxphysicalvolume.c
+index 27043030..36e7c322 100644
+--- a/modules/lvm2/udiskslinuxphysicalvolume.c
++++ b/modules/lvm2/udiskslinuxphysicalvolume.c
+@@ -143,6 +143,8 @@ udisks_linux_physical_volume_update   (UDisksLinuxPhysicalVolume    *physical_vo
+       udisks_physical_volume_set_size (iface, pv_info->pv_size);
+       udisks_physical_volume_set_free_size (iface, pv_info->pv_free);
+     }
++
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (iface));
+ }
+ 
+ /* ---------------------------------------------------------------------------------------------------- */
+diff --git a/modules/lvm2/udiskslinuxvdovolume.c b/modules/lvm2/udiskslinuxvdovolume.c
+index 317eddc2..430e2814 100644
+--- a/modules/lvm2/udiskslinuxvdovolume.c
++++ b/modules/lvm2/udiskslinuxvdovolume.c
+@@ -177,6 +177,8 @@ udisks_linux_vdo_volume_update (UDisksLinuxVDOVolume         *vdo_volume,
+ 
+   udisks_vdo_volume_set_compression (iface, vdo_info->compression);
+   udisks_vdo_volume_set_deduplication (iface, vdo_info->deduplication);
++
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (iface));
+ }
+ 
+ /* ---------------------------------------------------------------------------------------------------- */
+diff --git a/modules/lvm2/udiskslinuxvolumegroup.c b/modules/lvm2/udiskslinuxvolumegroup.c
+index aad2193e..3fbf6f02 100644
+--- a/modules/lvm2/udiskslinuxvolumegroup.c
++++ b/modules/lvm2/udiskslinuxvolumegroup.c
+@@ -136,11 +136,14 @@ udisks_linux_volume_group_update (UDisksLinuxVolumeGroup *volume_group,
+                                   gboolean               *needs_polling_ret)
+ {
+   UDisksVolumeGroup *iface = UDISKS_VOLUME_GROUP (volume_group);
++
+   udisks_volume_group_set_name (iface, vg_info->name);
+   udisks_volume_group_set_uuid (iface, vg_info->uuid);
+   udisks_volume_group_set_size (iface, vg_info->size);
+   udisks_volume_group_set_free_size (iface, vg_info->free);
+   udisks_volume_group_set_extent_size (iface, vg_info->extent_size);
++
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (iface));
+ }
+ 
+ /* ---------------------------------------------------------------------------------------------------- */
+diff --git a/modules/lvm2/udiskslinuxvolumegroupobject.c b/modules/lvm2/udiskslinuxvolumegroupobject.c
+index 50e9c640..e3bc8dfc 100644
+--- a/modules/lvm2/udiskslinuxvolumegroupobject.c
++++ b/modules/lvm2/udiskslinuxvolumegroupobject.c
+@@ -442,6 +442,7 @@ block_object_update_lvm_iface (UDisksLinuxBlockObject *object,
+ 
+   udisks_linux_block_lvm2_update (UDISKS_LINUX_BLOCK_LVM2 (iface_block_lvm2), object);
+   udisks_block_lvm2_set_logical_volume (iface_block_lvm2, lv_obj_path);
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (iface_block_lvm2));
+ }
+ 
+ static void
+@@ -456,6 +457,7 @@ lv_object_update_block_path (UDisksLinuxBlockObject       *block_object,
+     {
+       block_objpath = g_dbus_object_get_object_path (G_DBUS_OBJECT (block_object));
+       udisks_logical_volume_set_block_device (UDISKS_LOGICAL_VOLUME (lv), block_objpath);
++      g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (lv));
+     }
+ }
+ 
+@@ -695,6 +697,7 @@ update_vg (GObject      *source_obj,
+   bd_lvm_vgdata_free (vg_info);
+   lv_list_free (lvs);
+ 
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (object->iface_volume_group));
+   g_object_unref (object);
+ }
+ 
+-- 
+2.26.2
+

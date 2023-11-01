@@ -1,0 +1,34 @@
+From 890a0f3ca8cb5894d1764752c98b90dcb6274d6d Mon Sep 17 00:00:00 2001
+From: Vojtech Trefny <vtrefny@redhat.com>
+Date: Tue, 9 Jun 2020 11:16:15 +0200
+Subject: [PATCH] dbus-tests: Fix UdisksLVMVDOTest.test_resize_physical
+
+1 GiB suddenly isn't enough for physical size grow, lets hope
+2 GiB will be enough for everyone.
+
+Resolves: rhzb#1845435
+---
+ src/tests/dbus-tests/test_20_LVM.py | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/tests/dbus-tests/test_20_LVM.py b/src/tests/dbus-tests/test_20_LVM.py
+index e238879a3..1073a2f90 100644
+--- a/src/tests/dbus-tests/test_20_LVM.py
++++ b/src/tests/dbus-tests/test_20_LVM.py
+@@ -576,6 +576,7 @@ def test_resize_logical(self):
+         dbus_size = self.get_property(lv, '.LogicalVolume', 'Size')
+         dbus_size.assertEqual(vsize * 5)
+ 
++    @udiskstestcase.tag_test(udiskstestcase.TestTags.UNSTABLE)
+     def test_resize_physical(self):
+         vgname = 'udisks_test_vdo_vg'
+ 
+@@ -586,7 +587,7 @@ def test_resize_physical(self):
+         vg_free = self.get_property(vg, '.VolumeGroup', 'FreeSize')
+         lv_name = 'udisks_test_vdovlv'
+         pool_name = 'udisks_test_vdopool'
+-        psize = vg_free.value - 1 * 1024**3
++        psize = vg_free.value - 2 * 1024**3
+         vsize = psize * 5
+         lv_path = vg.CreateVDOVolume(lv_name, pool_name, dbus.UInt64(psize), dbus.UInt64(vsize),
+                                      dbus.UInt64(0), True, True, "auto", self.no_options,

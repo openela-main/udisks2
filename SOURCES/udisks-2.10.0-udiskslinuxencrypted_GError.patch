@@ -1,0 +1,30 @@
+From 486778c778a4ddb24395408c6b267e702e19ae02 Mon Sep 17 00:00:00 2001
+From: Tomas Bzatek <tbzatek@redhat.com>
+Date: Sat, 1 Jan 2022 22:01:49 +0100
+Subject: [PATCH] udiskslinuxencrypted: Fix GError ownership
+
+---
+ src/udiskslinuxencrypted.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/src/udiskslinuxencrypted.c b/src/udiskslinuxencrypted.c
+index c3a0821ac..3bc54e695 100644
+--- a/src/udiskslinuxencrypted.c
++++ b/src/udiskslinuxencrypted.c
+@@ -1040,7 +1040,7 @@ handle_resize (UDisksEncrypted       *encrypted,
+   object = udisks_daemon_util_dup_object (encrypted, &error);
+   if (object == NULL)
+     {
+-      g_dbus_method_invocation_take_error (invocation, error);
++      g_dbus_method_invocation_return_gerror (invocation, error);
+       goto out;
+     }
+ 
+@@ -1066,7 +1066,6 @@ handle_resize (UDisksEncrypted       *encrypted,
+   if (!udisks_daemon_util_get_caller_uid_sync (daemon, invocation, NULL /* GCancellable */, &caller_uid, &error))
+     {
+       g_dbus_method_invocation_return_gerror (invocation, error);
+-      g_clear_error (&error);
+       goto out;
+     }
+ 

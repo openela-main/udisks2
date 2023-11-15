@@ -1,0 +1,11 @@
+diff -up udisks-2.9.0/src/tests/dbus-tests/test_10_basic.py.bak udisks-2.9.0/src/tests/dbus-tests/test_10_basic.py
+--- udisks-2.9.0/src/tests/dbus-tests/test_10_basic.py.bak	2020-05-26 14:59:20.000000000 +0200
++++ udisks-2.9.0/src/tests/dbus-tests/test_10_basic.py	2021-04-23 15:49:07.405824214 +0200
+@@ -26,6 +26,7 @@ class UdisksBaseTest(udiskstestcase.Udis
+         elif distro in ('enterprise_linux', 'centos') and int(version) > 7:
+             modules.pop('bcache')
+             modules.pop('btrfs')
++            modules.pop('zram')
+         # assuming the kvdo module is typically pulled in as a vdo tool dependency
+         if not find_executable("vdo"):
+             modules.pop('vdo')

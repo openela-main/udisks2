@@ -1,0 +1,70 @@
+From 7c9933c0f80faaabbed607983fdf77f8c4562df6 Mon Sep 17 00:00:00 2001
+From: Tomas Bzatek <tbzatek@redhat.com>
+Date: Sat, 1 Jan 2022 20:11:57 +0100
+Subject: [PATCH] udiskslinuxpartition: Fix GError ownership
+
+---
+ src/udiskslinuxpartition.c | 15 ++++++---------
+ 1 file changed, 6 insertions(+), 9 deletions(-)
+
+diff --git a/src/udiskslinuxpartition.c b/src/udiskslinuxpartition.c
+index 5461b3903..3d970768d 100644
+--- a/src/udiskslinuxpartition.c
++++ b/src/udiskslinuxpartition.c
+@@ -135,8 +135,7 @@ check_authorization (UDisksPartition       *partition,
+                                                caller_uid,
+                                                &error))
+     {
+-      g_dbus_method_invocation_return_gerror (invocation, error);
+-      g_clear_error (&error);
++      g_dbus_method_invocation_take_error (invocation, error);
+       goto out;
+     }
+ 
+@@ -351,7 +350,7 @@ handle_set_flags (UDisksPartition       *partition,
+   object = udisks_daemon_util_dup_object (partition, &error);
+   if (object == NULL)
+     {
+-      g_dbus_method_invocation_take_error (invocation, error);
++      g_dbus_method_invocation_return_gerror (invocation, error);
+       goto out;
+     }
+ 
+@@ -499,7 +498,7 @@ handle_set_name (UDisksPartition       *partition,
+   object = udisks_daemon_util_dup_object (partition, &error);
+   if (object == NULL)
+     {
+-      g_dbus_method_invocation_take_error (invocation, error);
++      g_dbus_method_invocation_return_gerror (invocation, error);
+       goto out;
+     }
+ 
+@@ -873,7 +872,7 @@ handle_resize (UDisksPartition       *partition,
+   object = udisks_daemon_util_dup_object (partition, &error);
+   if (object == NULL)
+     {
+-      g_dbus_method_invocation_take_error (invocation, error);
++      g_dbus_method_invocation_return_gerror (invocation, error);
+       goto out;
+     }
+ 
+@@ -994,7 +993,7 @@ handle_delete (UDisksPartition       *partition,
+   object = udisks_daemon_util_dup_object (partition, &error);
+   if (object == NULL)
+     {
+-      g_dbus_method_invocation_take_error (invocation, error);
++      g_dbus_method_invocation_return_gerror (invocation, error);
+       goto out;
+     }
+ 
+@@ -1012,9 +1011,7 @@ handle_delete (UDisksPartition       *partition,
+       if (!udisks_linux_block_teardown (block, invocation, options, &error))
+         {
+           if (invocation != NULL)
+-            g_dbus_method_invocation_take_error (invocation, error);
+-          else
+-            g_clear_error (&error);
++            g_dbus_method_invocation_return_gerror (invocation, error);
+           goto out;
+         }
+     }

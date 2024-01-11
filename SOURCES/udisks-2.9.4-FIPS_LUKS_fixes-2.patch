@@ -1,0 +1,405 @@
+diff -up udisks-2.9.0/src/tests/dbus-tests/test_50_block.py.bak udisks-2.9.0/src/tests/dbus-tests/test_50_block.py
+--- udisks-2.9.0/src/tests/dbus-tests/test_50_block.py.bak	2020-05-26 14:59:20.000000000 +0200
++++ udisks-2.9.0/src/tests/dbus-tests/test_50_block.py	2023-06-02 17:08:45.203845819 +0200
+@@ -11,6 +11,8 @@ import udiskstestcase
+ class UdisksBlockTest(udiskstestcase.UdisksTestCase):
+     '''This is a basic block device test suite'''
+ 
++    LUKS_PASSPHRASE = 'shouldnotseeme'
++
+     def _close_luks(self, disk):
+         disk.Lock(self.no_options, dbus_interface=self.iface_prefix + '.Encrypted')
+ 
+@@ -201,7 +203,7 @@ class UdisksBlockTest(udiskstestcase.Udi
+ 
+         # format the disk
+         disk = self.get_object('/block_devices/' + os.path.basename(self.vdevs[0]))
+-        disk.Format('xfs', {'encrypt.passphrase': 'test'}, dbus_interface=self.iface_prefix + '.Block')
++        disk.Format('xfs', {'encrypt.passphrase': self.LUKS_PASSPHRASE}, dbus_interface=self.iface_prefix + '.Block')
+ 
+         # cleanup -- close the luks and remove format
+         self.addCleanup(self.wipe_fs, self.vdevs[0])
+@@ -209,7 +211,7 @@ class UdisksBlockTest(udiskstestcase.Udi
+ 
+         # configuration items as arrays of dbus.Byte
+         opts = self.str_to_ay('verify')
+-        passwd = self.str_to_ay('test')
++        passwd = self.str_to_ay(self.LUKS_PASSPHRASE)
+ 
+         # set the new configuration
+         conf = dbus.Dictionary({'passphrase-contents': passwd,
+@@ -254,7 +256,7 @@ class UdisksBlockTest(udiskstestcase.Udi
+ 
+         # format the disk
+         disk = self.get_object('/block_devices/' + os.path.basename(self.vdevs[0]))
+-        disk.Format('xfs', {'encrypt.passphrase': 'test'}, dbus_interface=self.iface_prefix + '.Block')
++        disk.Format('xfs', {'encrypt.passphrase': self.LUKS_PASSPHRASE}, dbus_interface=self.iface_prefix + '.Block')
+ 
+         # cleanup -- close the luks and remove format
+         self.addCleanup(self.wipe_fs, self.vdevs[0])
+diff -up udisks-2.9.0/src/tests/dbus-tests/test_70_encrypted.py.bak udisks-2.9.0/src/tests/dbus-tests/test_70_encrypted.py
+--- udisks-2.9.0/src/tests/dbus-tests/test_70_encrypted.py.bak	2020-05-26 14:59:20.000000000 +0200
++++ udisks-2.9.0/src/tests/dbus-tests/test_70_encrypted.py	2023-06-02 17:07:33.828531988 +0200
+@@ -40,6 +40,9 @@ def _get_blkid_version():
+ class UdisksEncryptedTest(udiskstestcase.UdisksTestCase):
+     '''This is an encrypted device test suite'''
+ 
++    PASSPHRASE = 'shouldnotseeme'
++    LUKS_NAME = 'myshinylittleluks'
++
+     def _create_luks(self, device, passphrase, binary=False):
+         raise NotImplementedError()
+ 
+@@ -60,7 +63,7 @@ class UdisksEncryptedTest(udiskstestcase
+         disk_name = os.path.basename(self.vdevs[0])
+         disk = self.get_object('/block_devices/' + disk_name)
+ 
+-        self._create_luks(disk, 'test')
++        self._create_luks(disk, self.PASSPHRASE)
+         self.addCleanup(self._remove_luks, disk)
+         self.udev_settle()
+ 
+@@ -124,7 +127,7 @@ class UdisksEncryptedTest(udiskstestcase
+         disk_name = os.path.basename(self.vdevs[0])
+         disk = self.get_object('/block_devices/' + disk_name)
+ 
+-        self._create_luks(disk, 'test')
++        self._create_luks(disk, self.PASSPHRASE)
+         self.addCleanup(self._remove_luks, disk)
+         self.udev_settle()
+ 
+@@ -160,11 +163,11 @@ class UdisksEncryptedTest(udiskstestcase
+         # wrong password
+         msg = 'org.freedesktop.UDisks2.Error.Failed: Error unlocking %s *' % self.vdevs[0]
+         with six.assertRaisesRegex(self, dbus.exceptions.DBusException, msg):
+-            disk.Unlock('shbdkjaf', self.no_options,
++            disk.Unlock('abcdefghijklmn', self.no_options,
+                         dbus_interface=self.iface_prefix + '.Encrypted')
+ 
+         # right password
+-        luks = disk.Unlock('test', self.no_options,
++        luks = disk.Unlock(self.PASSPHRASE, self.no_options,
+                            dbus_interface=self.iface_prefix + '.Encrypted')
+         self.assertIsNotNone(luks)
+         self.assertTrue(os.path.exists('/dev/disk/by-uuid/%s' % luks_uuid))
+@@ -180,7 +183,7 @@ class UdisksEncryptedTest(udiskstestcase
+ 
+         # read-only
+         ro_opts = dbus.Dictionary({'read-only': dbus.Boolean(True)}, signature=dbus.Signature('sv'))
+-        luks = disk.Unlock('test', ro_opts,
++        luks = disk.Unlock(self.PASSPHRASE, ro_opts,
+                            dbus_interface=self.iface_prefix + '.Encrypted')
+         self.assertIsNotNone(luks)
+         self.assertTrue(os.path.exists('/dev/disk/by-uuid/%s' % luks_uuid))
+@@ -196,13 +199,10 @@ class UdisksEncryptedTest(udiskstestcase
+         crypttab = self.read_file('/etc/crypttab')
+         self.addCleanup(self.write_file, '/etc/crypttab', crypttab)
+ 
+-        passwd = 'test'
+-        luks_name = 'myshinylittleluks'
+-
+         disk_name = os.path.basename(self.vdevs[0])
+         disk = self.get_object('/block_devices/' + disk_name)
+ 
+-        self._create_luks(disk, passwd)
++        self._create_luks(disk, self.PASSPHRASE)
+         self.addCleanup(self._remove_luks, disk)
+         self.udev_settle()
+ 
+@@ -212,22 +212,22 @@ class UdisksEncryptedTest(udiskstestcase
+         disk.Lock(self.no_options, dbus_interface=self.iface_prefix + '.Encrypted')
+ 
+         # add new entry to the crypttab
+-        new_crypttab = crypttab + '%s UUID=%s none\n' % (luks_name, disk_uuid)
++        new_crypttab = crypttab + '%s UUID=%s none\n' % (self.LUKS_NAME, disk_uuid)
+         self.write_file('/etc/crypttab', new_crypttab)
+ 
+         # give udisks time to react to change of the file
+         time.sleep(5)
+         dbus_conf = disk.GetSecretConfiguration(self.no_options, dbus_interface=self.iface_prefix + '.Block')
+         self.assertIsNotNone(dbus_conf)
+-        self.assertEqual(self.ay_to_str(dbus_conf[0][1]['name']), luks_name)
++        self.assertEqual(self.ay_to_str(dbus_conf[0][1]['name']), self.LUKS_NAME)
+ 
+         # unlock the device
+-        luks = disk.Unlock(passwd, self.no_options,
++        luks = disk.Unlock(self.PASSPHRASE, self.no_options,
+                            dbus_interface=self.iface_prefix + '.Encrypted')
+         self.assertIsNotNone(luks)
+ 
+         # unlock should use name from crypttab for the /dev/mapper device
+-        dm_path = '/dev/mapper/%s' % luks_name
++        dm_path = '/dev/mapper/%s' % self.LUKS_NAME
+         self.assertTrue(os.path.exists(dm_path))
+ 
+         # preferred 'device' should be /dev/mapper/name too
+@@ -242,8 +242,7 @@ class UdisksEncryptedTest(udiskstestcase
+         crypttab = self.read_file('/etc/crypttab')
+         self.addCleanup(self.write_file, '/etc/crypttab', crypttab)
+ 
+-        passwd = b'test\0test'
+-        luks_name = 'myshinylittleluks'
++        passwd = b'testtesttest\0testtesttest'
+ 
+         # create key file
+         _fd, key_file = tempfile.mkstemp()
+@@ -264,14 +263,14 @@ class UdisksEncryptedTest(udiskstestcase
+         disk.Lock(self.no_options, dbus_interface=self.iface_prefix + '.Encrypted')
+ 
+         # add new entry to the crypttab
+-        new_crypttab = crypttab + '%s UUID=%s %s\n' % (luks_name, disk_uuid, key_file)
++        new_crypttab = crypttab + '%s UUID=%s %s\n' % (self.LUKS_NAME, disk_uuid, key_file)
+         self.write_file('/etc/crypttab', new_crypttab)
+ 
+         # give udisks time to react to change of the file
+         time.sleep(5)
+         dbus_conf = disk.GetSecretConfiguration(self.no_options, dbus_interface=self.iface_prefix + '.Block')
+         self.assertIsNotNone(dbus_conf)
+-        self.assertEqual(self.ay_to_str(dbus_conf[0][1]['name']), luks_name)
++        self.assertEqual(self.ay_to_str(dbus_conf[0][1]['name']), self.LUKS_NAME)
+         self.assertEqual(self.ay_to_str(dbus_conf[0][1]['passphrase-path']), key_file)
+ 
+         # unlock the device using empty passphrase (should use the key file)
+@@ -280,7 +279,7 @@ class UdisksEncryptedTest(udiskstestcase
+         self.assertIsNotNone(luks)
+ 
+         # unlock should use name from crypttab for the /dev/mapper device
+-        dm_path = '/dev/mapper/%s' % luks_name
++        dm_path = '/dev/mapper/%s' % self.LUKS_NAME
+         self.assertTrue(os.path.exists(dm_path))
+ 
+         # preferred 'device' should be /dev/mapper/name too
+@@ -293,7 +292,7 @@ class UdisksEncryptedTest(udiskstestcase
+         disk_name = os.path.basename(self.vdevs[0])
+         disk = self.get_object('/block_devices/' + disk_name)
+ 
+-        self._create_luks(disk, 'test')
++        self._create_luks(disk, self.PASSPHRASE)
+         self.addCleanup(self._remove_luks, disk)
+         self.udev_settle()
+ 
+@@ -320,11 +319,11 @@ class UdisksEncryptedTest(udiskstestcase
+         disk_name = os.path.basename(self.vdevs[0])
+         disk = self.get_object('/block_devices/' + disk_name)
+ 
+-        self._create_luks(disk, 'test')
++        self._create_luks(disk, self.PASSPHRASE)
+         self.addCleanup(self._remove_luks, disk)
+         self.udev_settle()
+ 
+-        disk.ChangePassphrase('test', 'password', self.no_options,
++        disk.ChangePassphrase(self.PASSPHRASE, self.PASSPHRASE + '222', self.no_options,
+                               dbus_interface=self.iface_prefix + '.Encrypted')
+ 
+         disk.Lock(self.no_options, dbus_interface=self.iface_prefix + '.Encrypted')
+@@ -332,11 +331,11 @@ class UdisksEncryptedTest(udiskstestcase
+         # old password, should fail
+         msg = 'org.freedesktop.UDisks2.Error.Failed: Error unlocking %s *' % self.vdevs[0]
+         with six.assertRaisesRegex(self, dbus.exceptions.DBusException, msg):
+-            disk.Unlock('test', self.no_options,
++            disk.Unlock(self.PASSPHRASE, self.no_options,
+                         dbus_interface=self.iface_prefix + '.Encrypted')
+ 
+         # new password
+-        luks = disk.Unlock('password', self.no_options,
++        luks = disk.Unlock(self.PASSPHRASE + '222', self.no_options,
+                            dbus_interface=self.iface_prefix + '.Encrypted')
+         self.assertIsNotNone(luks)
+ 
+@@ -347,7 +346,7 @@ class UdisksEncryptedTest(udiskstestcase
+ 
+     def test_resize(self):
+         device = self.get_device(self.vdevs[0])
+-        self._create_luks(device, 'test')
++        self._create_luks(device, self.PASSPHRASE)
+         self.addCleanup(self._remove_luks, device)
+         self.udev_settle()
+ 
+@@ -376,8 +375,6 @@ class UdisksEncryptedTest(udiskstestcase
+         fstab = self.read_file('/etc/fstab')
+         self.addCleanup(self.write_file, '/etc/fstab', fstab)
+ 
+-        passphrase = 'test'
+-
+         disk_name = os.path.basename(self.vdevs[0])
+         disk = self.get_object('/block_devices/' + disk_name)
+ 
+@@ -388,7 +385,7 @@ class UdisksEncryptedTest(udiskstestcase
+         self.assertIsNotNone(part)
+ 
+         # create LUKS on the partition and add it to crypttab
+-        self._create_luks(part, passphrase)
++        self._create_luks(part, self.PASSPHRASE)
+         self.udev_settle()
+ 
+         conf = dbus.Dictionary({'name': self.str_to_ay('udisks_luks_test'),
+@@ -525,10 +522,8 @@ class UdisksEncryptedTestLUKS2(UdisksEnc
+         super(UdisksEncryptedTestLUKS2, self).setUp()
+ 
+     def test_resize(self):
+-        passwd = 'test'
+-
+         device = self.get_device(self.vdevs[0])
+-        self._create_luks(device, passwd)
++        self._create_luks(device, self.PASSPHRASE)
+         self.addCleanup(self._remove_luks, device)
+         self.udev_settle()
+ 
+@@ -554,7 +549,7 @@ class UdisksEncryptedTestLUKS2(UdisksEnc
+ 
+         # right passphrase
+         d = dbus.Dictionary(signature='sv')
+-        d['passphrase'] = passwd
++        d['passphrase'] = self.PASSPHRASE
+         device.Resize(dbus.UInt64(100*1024*1024), d,
+                       dbus_interface=self.iface_prefix + '.Encrypted')
+ 
+@@ -563,7 +558,7 @@ class UdisksEncryptedTestLUKS2(UdisksEnc
+ 
+         # resize back to the original size (using binary passphrase)
+         d = dbus.Dictionary(signature='sv')
+-        d['keyfile_contents'] = self.str_to_ay(passwd, False)
++        d['keyfile_contents'] = self.str_to_ay(self.PASSPHRASE, False)
+         device.Resize(dbus.UInt64(clear_size), d,
+                       dbus_interface=self.iface_prefix + '.Encrypted')
+ 
+@@ -581,7 +576,7 @@ class UdisksEncryptedTestLUKS2(UdisksEnc
+ 
+         # create LUKS without specifying version
+         options = dbus.Dictionary(signature='sv')
+-        options['encrypt.passphrase'] = 'test'
++        options['encrypt.passphrase'] = self.PASSPHRASE
+ 
+         disk.Format('xfs', options,
+                     dbus_interface=self.iface_prefix + '.Block')
+@@ -617,14 +612,12 @@ class UdisksEncryptedTestLUKS2(UdisksEnc
+ 
+     @udiskstestcase.tag_test(udiskstestcase.TestTags.UNSTABLE)
+     def test_integrity(self):
+-        passwd = 'test'
+-
+         cryptsetup_version = _get_cryptsetup_version()
+         if cryptsetup_version < LooseVersion('2.2.0'):
+             self.skipTest('Integrity devices are not marked as internal in cryptsetup < 2.2.0')
+ 
+         device = self.get_device(self.vdevs[0])
+-        self._create_luks_integrity(self.vdevs[0], passwd)
++        self._create_luks_integrity(self.vdevs[0], self.PASSPHRASE)
+ 
+         self.addCleanup(self._remove_luks, device)
+         self.udev_settle()
+@@ -634,7 +627,7 @@ class UdisksEncryptedTestLUKS2(UdisksEnc
+         # the device is not opened, we need to read the UUID from LUKS metadata
+         luks_uuid = BlockDev.crypto_luks_uuid(self.vdevs[0])
+ 
+-        luks_path = device.Unlock('test', self.no_options,
++        luks_path = device.Unlock(self.PASSPHRASE, self.no_options,
+                                   dbus_interface=self.iface_prefix + '.Encrypted')
+         self.assertIsNotNone(luks_path)
+         self.assertTrue(os.path.exists('/dev/disk/by-uuid/%s' % luks_uuid))
+diff -up udisks-2.9.0/src/tests/integration-test.bak udisks-2.9.0/src/tests/integration-test
+--- udisks-2.9.0/src/tests/integration-test.bak	2020-05-26 14:59:20.000000000 +0200
++++ udisks-2.9.0/src/tests/integration-test	2023-06-02 16:59:52.841963720 +0200
+@@ -1321,7 +1321,7 @@ class Luks(UDisksTestCase):
+ 
+     def setup_crypto_device(self):
+         self.fs_create(None, 'ext4', GLib.Variant('a{sv}', {
+-            'encrypt.passphrase': GLib.Variant('s', 's3kr1t'),
++            'encrypt.passphrase': GLib.Variant('s', 's3kr1ts3kr1t'),
+             'label': GLib.Variant('s', 'treasure')}))
+         self.client.settle()
+         crypt_obj = self.client.get_object(self.udisks_block().get_object_path())
+@@ -1332,7 +1332,7 @@ class Luks(UDisksTestCase):
+     @staticmethod
+     def unlock_crypto_device(encrypted):
+         return encrypted.call_unlock_sync(
+-            's3kr1t', no_options, None)
++            's3kr1ts3kr1t', no_options, None)
+ 
+     def tearDown(self):
+         """clean up behind failed test cases"""
+@@ -1400,7 +1400,7 @@ class Luks(UDisksTestCase):
+             udev_dump = subprocess.Popen(['udevadm', 'info', '--export-db'],
+                                          stdout=subprocess.PIPE)
+             out = udev_dump.communicate()[0]
+-            self.assertFalse(b's3kr1t' in out, 'password in udev properties')
++            self.assertFalse(b's3kr1ts3kr1t' in out, 'password in udev properties')
+             self.assertFalse(b'essiv:sha' in out, 'key information in udev properties')
+ 
+         finally:
+@@ -1510,18 +1510,18 @@ class Luks(UDisksTestCase):
+         encrypted = self.setup_crypto_device()
+         # wrong password, has bytes after a trailing '\0'
+         self.assertRaises(GLib.GError, encrypted.call_unlock_sync,
+-                          '', Luks.keyfile_options(b's3kr1t\0X'), None)
++                          '', Luks.keyfile_options(b's3kr1ts3kr1t\0X'), None)
+         self.assertRaises(GLib.GError, encrypted.call_unlock_sync,
+-                          '', Luks.keyfile_options(b's3kr1t\n'), None)
++                          '', Luks.keyfile_options(b's3kr1ts3kr1t\n'), None)
+         # correct password, specified as keyfile
+-        encrypted.call_unlock_sync('', Luks.keyfile_options(b's3kr1t'), None)
++        encrypted.call_unlock_sync('', Luks.keyfile_options(b's3kr1ts3kr1t'), None)
+         encrypted.call_lock_sync(no_options, None)
+ 
+     def test_plaintext_keyfile(self):
+         """Setup a device using a plaintext keyfile."""
+         # Using a plaintext keyfile should be equivalent to passphrase
+         self.fs_create(None, 'ext4', GLib.Variant('a{sv}', {
+-            'encrypt.passphrase': GLib.Variant('ay', _bytes_to_ay(b's3kr1t')),
++            'encrypt.passphrase': GLib.Variant('ay', _bytes_to_ay(b's3kr1ts3kr1t')),
+             'label': GLib.Variant('s', 'treasure')}))
+ 
+         crypt_obj = self.client.get_object(self.udisks_block().get_object_path())
+@@ -1532,16 +1532,16 @@ class Luks(UDisksTestCase):
+         self.assertRaises(GLib.GError, encrypted.call_unlock_sync,
+                           'h4ckpassword', no_options, None)
+         self.assertRaises(GLib.GError, encrypted.call_unlock_sync,
+-                          '', Luks.keyfile_options(b's3kr1t\0X'), None)
++                          '', Luks.keyfile_options(b's3kr1ts3kr1t\0X'), None)
+         self.assertRaises(GLib.GError, encrypted.call_unlock_sync,
+-                          '', Luks.keyfile_options(b's3kr1t\n'), None)
++                          '', Luks.keyfile_options(b's3kr1ts3kr1t\n'), None)
+ 
+         # correct password
+-        encrypted.call_unlock_sync('', Luks.keyfile_options(b's3kr1t'), None)
++        encrypted.call_unlock_sync('', Luks.keyfile_options(b's3kr1ts3kr1t'), None)
+         encrypted.call_lock_sync(no_options, None)
+ 
+         # correct password, specified as passphrase
+-        encrypted.call_unlock_sync('s3kr1t', no_options, None)
++        encrypted.call_unlock_sync('s3kr1ts3kr1t', no_options, None)
+         encrypted.call_lock_sync(no_options, None)
+ 
+     def test_binary_keyfile(self):
+@@ -1607,11 +1607,11 @@ class Luks(UDisksTestCase):
+         encrypted = self.setup_crypto_device()
+ 
+         # change: passphrase -> passphrase
+-        encrypted.call_change_passphrase_sync('s3kr1t', 'passphrase', no_options, None)
++        encrypted.call_change_passphrase_sync('s3kr1ts3kr1t', 'passphrase', no_options, None)
+ 
+         # verify new password:
+         self.assertRaises(GLib.GError, encrypted.call_unlock_sync,
+-                          's3kr1t', no_options, None)
++                          's3kr1ts3kr1t', no_options, None)
+         encrypted.call_unlock_sync('passphrase', no_options, None)
+         encrypted.call_lock_sync(no_options, None)
+ 
+@@ -1644,7 +1644,7 @@ class Luks(UDisksTestCase):
+ 
+         # change: keyfile -> passphrase
+         encrypted.call_change_passphrase_sync(
+-            '', 's3kr1t', GLib.Variant('a{sv}', {
++            '', 's3kr1ts3kr1t', GLib.Variant('a{sv}', {
+                 'old_keyfile_contents': GLib.Variant('ay', _bytes_to_ay(key_file_1)),
+             }),
+             None)
+@@ -1652,7 +1652,7 @@ class Luks(UDisksTestCase):
+         # verify new password:
+         self.assertRaises(GLib.GError, encrypted.call_unlock_sync,
+                           '', Luks.keyfile_options(key_file_1), None)
+-        encrypted.call_unlock_sync('s3kr1t', no_options, None)
++        encrypted.call_unlock_sync('s3kr1ts3kr1t', no_options, None)
+         encrypted.call_lock_sync(no_options, None)
+ 
+ 

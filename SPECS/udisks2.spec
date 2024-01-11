@@ -56,7 +56,7 @@
 Name:    udisks2
 Summary: Disk Manager
 Version: 2.9.0
-Release: 13%{?dist}
+Release: 16%{?dist}
 License: GPLv2+
 Group:   System Environment/Libraries
 URL:     https://github.com/storaged-project/udisks
@@ -79,6 +79,8 @@ Patch15: udisks-2.9.2-udisksdaemonutil-Refactor-udisks_daemon_util_trigger.patch
 Patch16: udisks-2.9.2-udiskslinuxmanager-Trigger-uevent-after-loop-device-setup.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2004422
 Patch17: udisks-2.9.4-ext-mount-options.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2213715
+Patch18: udisks-2.10.0-iscsi_timeout.patch
 Patch20: udisks-2.10.0-tests-drive_ata-apm.patch
 Patch21: udisks-2.10.0-tests-no-dev_disk-by-path.patch
 Patch22: tests-disable-zram.patch
@@ -91,7 +93,18 @@ Patch25: udisks-2.10.0-udiskslinuxpartition_GError.patch
 Patch26: udisks-2.10.0-udiskslinuxpartitiontable_GError.patch
 Patch27: udisks-2.10.0-udiskslinuxfilesystem_GError.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=1966460
-Patch28: udisks-2.10.0-iscsi_test_05_restart_iscsid.patch
+Patch28: udisks-2.10.0-iscsi_test_01_badauth.patch
+Patch29: udisks-2.10.0-iscsi_test_02_lio_target_conf.patch
+Patch31: udisks-2.10.0-iscsi_test_04_fix_test_login_chap_auth.patch
+Patch32: udisks-2.10.0-iscsi_test_05_restart_iscsid.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2188991
+Patch33: udisks-2.10.0-iscsi-CHAP-auth-algs.patch
+Patch34: udisks-2.9.4-FIPS_LUKS_fixes-2.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2039772
+Patch35: udisks-2.10.0-lvm2_update_epoch.patch
+Patch36: udisks-2.10.0-lvm2_vgcreate_uevent_sync.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2213193
+Patch37: udisks-2.10.0-iscsi-ibft-chap-auth.patch
 
 BuildRequires: glib2-devel >= %{glib2_version}
 BuildRequires: gobject-introspection-devel >= %{gobject_introspection_version}
@@ -309,6 +322,7 @@ This package contains module for VDO management.
 %patch15 -p1
 %patch16 -p1
 %patch17 -p1
+%patch18 -p1
 %patch20 -p1
 %patch21 -p1
 %patch22 -p1
@@ -318,6 +332,14 @@ This package contains module for VDO management.
 %patch26 -p1
 %patch27 -p1
 %patch28 -p1
+%patch29 -p1
+%patch31 -p1
+%patch32 -p1
+%patch33 -p1
+%patch34 -p1
+%patch35 -p1
+%patch36 -p1
+%patch37 -p1
 sed -i udisks/udisks2.conf.in -e "s/encryption=luks1/encryption=%{default_luks_encryption}/"
 
 %build
@@ -510,6 +532,18 @@ fi
 %endif
 
 %changelog
+* Thu Aug 03 2023 Tomas Bzatek <tbzatek@redhat.com> - 2.9.0-16
+- iscsi: Fix login on firmware-discovered nodes (#2213193)
+- tests: Extend iscsi method call timeouts (#2213715)
+
+* Tue Jun 06 2023 Tomas Bzatek <tbzatek@redhat.com> - 2.9.0-15
+- Reimport gating tests
+
+* Fri Jun 02 2023 Tomas Bzatek <tbzatek@redhat.com> - 2.9.0-14
+- iscsi: CHAP auth algorithm selection fixes (#2188991)
+- tests: Use stronger passphrases for LUKS tests
+- lvm2: Improve uevent processing (#2039772)
+
 * Tue Nov 01 2022 Tomas Bzatek <tbzatek@redhat.com> - 2.9.0-13
 - Fix iscsi test auth failures (#1966460)
 

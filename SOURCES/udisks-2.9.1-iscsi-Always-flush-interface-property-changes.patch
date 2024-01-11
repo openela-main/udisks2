@@ -1,0 +1,25 @@
+From 195f3b030de32f5993da736c75e6a9bd76e6a7c7 Mon Sep 17 00:00:00 2001
+From: Tomas Bzatek <tbzatek@redhat.com>
+Date: Fri, 26 Jun 2020 17:56:39 +0200
+Subject: [PATCH 5/8] iscsi: Always flush interface property changes
+
+---
+ modules/iscsi/udiskslinuxiscsisessionobject.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/modules/iscsi/udiskslinuxiscsisessionobject.c b/modules/iscsi/udiskslinuxiscsisessionobject.c
+index 9e525e3f..a43cecd1 100644
+--- a/modules/iscsi/udiskslinuxiscsisessionobject.c
++++ b/modules/iscsi/udiskslinuxiscsisessionobject.c
+@@ -355,6 +355,8 @@ udisks_linux_iscsi_session_object_update_iface (UDisksLinuxISCSISessionObject *s
+   udisks_iscsi_session_set_lu_reset_timeout (iface, session_info.tmo.lu_reset_tmo);
+   udisks_iscsi_session_set_recovery_timeout (iface, session_info.tmo.recovery_tmo);
+   udisks_iscsi_session_set_tgt_reset_timeout (iface, session_info.tmo.tgt_reset_tmo);
++
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (iface));
+ }
+ 
+ static gboolean
+-- 
+2.26.2
+

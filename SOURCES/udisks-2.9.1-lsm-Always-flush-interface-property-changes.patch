@@ -1,0 +1,25 @@
+From 861a0d8721536e2d210b79c845bb4f5b266b037f Mon Sep 17 00:00:00 2001
+From: Tomas Bzatek <tbzatek@redhat.com>
+Date: Fri, 26 Jun 2020 17:57:01 +0200
+Subject: [PATCH 6/8] lsm: Always flush interface property changes
+
+---
+ modules/lsm/lsm_linux_drive.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/modules/lsm/lsm_linux_drive.c b/modules/lsm/lsm_linux_drive.c
+index 19e68c2f..6433c308 100644
+--- a/modules/lsm/lsm_linux_drive.c
++++ b/modules/lsm/lsm_linux_drive.c
+@@ -220,6 +220,8 @@ _fill_drive_lsm (UDisksLinuxDriveLSM  *drive_lsm,
+   udisks_drive_lsm_set_min_io_size (std_drv_lsm, lsm_vol_data->min_io_size);
+   udisks_drive_lsm_set_opt_io_size (std_drv_lsm, lsm_vol_data->opt_io_size);
+   udisks_drive_lsm_set_raid_disk_count (std_drv_lsm, lsm_vol_data->raid_disk_count);
++
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (std_drv_lsm));
+ }
+ 
+ 
+-- 
+2.26.2
+

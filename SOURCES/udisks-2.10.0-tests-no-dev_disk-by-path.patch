@@ -1,0 +1,43 @@
+From 1358d1e5208d71d5a70f17a242eda00f079a9d0b Mon Sep 17 00:00:00 2001
+From: Tomas Bzatek <tbzatek@redhat.com>
+Date: Thu, 22 Apr 2021 18:20:48 +0200
+Subject: [PATCH 2/2] tests: Handle missing /dev/disk/by-path gracefully
+
+Limited testing environments may not have this path always available.
+---
+ src/tests/dbus-tests/test_drive_ata.py | 19 +++++++++++--------
+ 1 file changed, 11 insertions(+), 8 deletions(-)
+
+diff --git a/src/tests/dbus-tests/test_drive_ata.py b/src/tests/dbus-tests/test_drive_ata.py
+index e91bd02f..37740c60 100644
+--- a/src/tests/dbus-tests/test_drive_ata.py
++++ b/src/tests/dbus-tests/test_drive_ata.py
+@@ -20,14 +20,17 @@ DISK_PATH = "/dev/disk/by-path/"
+ 
+ def _get_sata_disks():
+     sata_disks = []
+-    by_path = os.listdir(DISK_PATH)
+-    for dev in by_path:
+-        if "ata" in dev and "part" not in dev:
+-            path = os.path.realpath(os.path.join(DISK_PATH, dev))
+-            name = os.path.basename(path)
+-            if name.startswith("sd"):
+-                # ignore devices like CD drives etc.
+-                sata_disks.append(name)
++    try:
++        by_path = os.listdir(DISK_PATH)
++        for dev in by_path:
++            if "ata" in dev and "part" not in dev:
++                path = os.path.realpath(os.path.join(DISK_PATH, dev))
++                name = os.path.basename(path)
++                if name.startswith("sd"):
++                    # ignore devices like CD drives etc.
++                    sata_disks.append(name)
++    except:
++        pass
+     return sata_disks
+ 
+ 
+-- 
+2.30.2
+

@@ -1,0 +1,29 @@
+From fdf6b233df960e6903c62b86735d86c59d967d12 Mon Sep 17 00:00:00 2001
+From: Tomas Bzatek <tbzatek@redhat.com>
+Date: Fri, 19 Jun 2020 19:12:07 +0200
+Subject: [PATCH] udiskslinuxblock: Fix fstab records matching by needle
+
+Apparently mnt_fs_match_options() is not suitable for this use case.
+---
+ src/udiskslinuxblock.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/src/udiskslinuxblock.c b/src/udiskslinuxblock.c
+index 888ec634..d5be8e4c 100644
+--- a/src/udiskslinuxblock.c
++++ b/src/udiskslinuxblock.c
+@@ -575,7 +575,10 @@ find_fstab_entries (UDisksDaemon     *daemon,
+         }
+       else if (needle != NULL)
+         {
+-          if (mnt_fs_match_options (fs, needle) == 0)
++          const char *opts;
++
++          opts = mnt_fs_get_options (fs);
++          if (! opts || g_strstr_len (opts, -1, needle) == NULL)
+             continue;
+         }
+ 
+-- 
+2.26.2
+

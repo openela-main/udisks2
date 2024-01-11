@@ -1,0 +1,24 @@
+From 724ff8679e0ae0fd4d84f4e6c1b36007e648e8ca Mon Sep 17 00:00:00 2001
+From: Tomas Bzatek <tbzatek@redhat.com>
+Date: Fri, 26 Jun 2020 17:57:12 +0200
+Subject: [PATCH 7/8] zram: Always flush interface property changes
+
+---
+ modules/zram/udiskslinuxblockzram.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/modules/zram/udiskslinuxblockzram.c b/modules/zram/udiskslinuxblockzram.c
+index 132d4174..1bae3686 100644
+--- a/modules/zram/udiskslinuxblockzram.c
++++ b/modules/zram/udiskslinuxblockzram.c
+@@ -277,6 +277,7 @@ udisks_linux_block_zram_update (UDisksLinuxBlockZRAM    *zramblock,
+ 
+   udisks_block_zram_set_active (iface, bd_swap_swapstatus (dev_file, &error));
+ out:
++  g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (iface));
+   if (zram_info)
+     bd_kbd_zram_stats_free (zram_info);
+   if (error)
+-- 
+2.26.2
+

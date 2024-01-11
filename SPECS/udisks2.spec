@@ -48,7 +48,7 @@
 Name:    udisks2
 Summary: Disk Manager
 Version: 2.9.4
-Release: 7%{?dist}
+Release: 9%{?dist}
 License: GPLv2+
 URL:     https://github.com/storaged-project/udisks
 Source0: https://github.com/storaged-project/udisks/releases/download/udisks-%{version}/udisks-%{version}.tar.bz2
@@ -71,6 +71,20 @@ Patch12: udisks-2.10.0-iscsi_test_03_iscsid_cache_clean.patch
 Patch13: udisks-2.10.0-iscsi_test_04_fix_test_login_chap_auth.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=1958932
 Patch14: udisks-2.10.0-iscsi_test_05_restart_iscsid.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2188916
+Patch15: udisks-2.10.0-iscsi-CHAP-auth-algs.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2188750
+# https://bugzilla.redhat.com/show_bug.cgi?id=2188752
+Patch16: udisks-2.9.4-FIPS_LUKS_fixes.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2211191
+Patch17: udisks-2.10.0-integration_test_force_readonly.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2031673
+Patch18: udisks-2.10.0-lvm2_update_epoch.patch
+Patch19: udisks-2.10.0-lvm2_vgcreate_uevent_sync.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2148844
+Patch20: udisks-2.9.4-tests_job_unstable.patch
+# https://bugzilla.redhat.com/show_bug.cgi?id=2213769
+Patch21: udisks-2.10.0-iscsi-ibft-chap-auth.patch
 
 BuildRequires: make
 BuildRequires: glib2-devel >= %{glib2_version}
@@ -446,6 +460,16 @@ fi
 %endif
 
 %changelog
+* Wed Aug 02 2023 Tomas Bzatek <tbzatek@redhat.com> - 2.9.4-9
+- iscsi: Fix login on firmware-discovered nodes (#2213769)
+
+* Fri Jun 02 2023 Tomas Bzatek <tbzatek@redhat.com> - 2.9.4-8
+- iscsi: CHAP auth algorithm selection fixes (#2188916)
+- tests: Use stronger passphrases for LUKS tests (#2188750,#2188752)
+- integration-test: Fix scsi_debug cd drive read-only detection (#2211191)
+- lvm2: Improve uevent processing (#2031673)
+- tests: Mark test_job.UdisksJobTest.test_job as unstable (#2148844)
+
 * Tue Nov 01 2022 Tomas Bzatek <tbzatek@redhat.com> - 2.9.4-7
 - Fix iscsi test auth failures (#1958932)
 

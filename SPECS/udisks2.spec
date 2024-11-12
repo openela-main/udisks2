@@ -48,7 +48,7 @@
 Name:    udisks2
 Summary: Disk Manager
 Version: 2.9.4
-Release: 9%{?dist}
+Release: 11%{?dist}
 License: GPLv2+
 URL:     https://github.com/storaged-project/udisks
 Source0: https://github.com/storaged-project/udisks/releases/download/udisks-%{version}/udisks-%{version}.tar.bz2
@@ -85,6 +85,11 @@ Patch19: udisks-2.10.0-lvm2_vgcreate_uevent_sync.patch
 Patch20: udisks-2.9.4-tests_job_unstable.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2213769
 Patch21: udisks-2.10.0-iscsi-ibft-chap-auth.patch
+# https://issues.redhat.com/browse/RHEL-16229
+Patch22: udisks-2.11.0-targetcli_config_attr_fix.patch
+# https://issues.redhat.com/browse/RHEL-8031
+Patch23: udisks-2.11.0-lvm2_refactor_wipe.patch
+Patch24: udisks-2.11.0-BLKRRPART-harder.patch
 
 BuildRequires: make
 BuildRequires: glib2-devel >= %{glib2_version}
@@ -460,6 +465,13 @@ fi
 %endif
 
 %changelog
+* Wed May 15 2024 Tomas Bzatek <tbzatek@redhat.com> - 2.9.4-11
+- udiskslinuxblockobject: Try issuing BLKRRPART ioctl harder
+- lvm2: Refactor udisks_daemon_util_lvm2_wipe_block()
+
+* Tue Nov 28 2023 Tomas Bzatek <tbzatek@redhat.com> - 2.9.4-10
+- tests: Fix targetcli_config.json (RHEL-16229)
+
 * Wed Aug 02 2023 Tomas Bzatek <tbzatek@redhat.com> - 2.9.4-9
 - iscsi: Fix login on firmware-discovered nodes (#2213769)
 

@@ -56,7 +56,7 @@
 Name:    udisks2
 Summary: Disk Manager
 Version: 2.9.0
-Release: 16%{?dist}
+Release: 16%{?dist}.1
 License: GPLv2+
 Group:   System Environment/Libraries
 URL:     https://github.com/storaged-project/udisks
@@ -105,6 +105,8 @@ Patch35: udisks-2.10.0-lvm2_update_epoch.patch
 Patch36: udisks-2.10.0-lvm2_vgcreate_uevent_sync.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2213193
 Patch37: udisks-2.10.0-iscsi-ibft-chap-auth.patch
+# https://issues.redhat.com/browse/RHEL-109408
+Patch38: udisks-2.10.91-manager_loopsetup_fd_bounds.patch
 
 BuildRequires: glib2-devel >= %{glib2_version}
 BuildRequires: gobject-introspection-devel >= %{gobject_introspection_version}
@@ -340,6 +342,7 @@ This package contains module for VDO management.
 %patch35 -p1
 %patch36 -p1
 %patch37 -p1
+%patch38 -p1
 sed -i udisks/udisks2.conf.in -e "s/encryption=luks1/encryption=%{default_luks_encryption}/"
 
 %build
@@ -532,6 +535,9 @@ fi
 %endif
 
 %changelog
+* Mon Aug 25 2025 Tomas Bzatek <tbzatek@redhat.com> - 2.9.0-16.1
+- udiskslinuxmanager: Add lower bounds check to fd_index (CVE-2025-8067) (RHEL-109408)
+
 * Thu Aug 03 2023 Tomas Bzatek <tbzatek@redhat.com> - 2.9.0-16
 - iscsi: Fix login on firmware-discovered nodes (#2213193)
 - tests: Extend iscsi method call timeouts (#2213715)

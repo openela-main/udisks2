@@ -48,7 +48,7 @@
 Name:    udisks2
 Summary: Disk Manager
 Version: 2.9.4
-Release: 11%{?dist}
+Release: 11%{?dist}.1
 License: GPLv2+
 URL:     https://github.com/storaged-project/udisks
 Source0: https://github.com/storaged-project/udisks/releases/download/udisks-%{version}/udisks-%{version}.tar.bz2
@@ -90,6 +90,8 @@ Patch22: udisks-2.11.0-targetcli_config_attr_fix.patch
 # https://issues.redhat.com/browse/RHEL-8031
 Patch23: udisks-2.11.0-lvm2_refactor_wipe.patch
 Patch24: udisks-2.11.0-BLKRRPART-harder.patch
+# https://issues.redhat.com/browse/RHEL-109417
+Patch25: udisks-2.10.91-manager_loopsetup_fd_bounds.patch
 
 BuildRequires: make
 BuildRequires: glib2-devel >= %{glib2_version}
@@ -465,6 +467,9 @@ fi
 %endif
 
 %changelog
+* Thu Aug 21 2025 Tomas Bzatek <tbzatek@redhat.com> - 2.9.4-11.1
+- udiskslinuxmanager: Add lower bounds check to fd_index (CVE-2025-8067) (RHEL-109417)
+
 * Wed May 15 2024 Tomas Bzatek <tbzatek@redhat.com> - 2.9.4-11
 - udiskslinuxblockobject: Try issuing BLKRRPART ioctl harder
 - lvm2: Refactor udisks_daemon_util_lvm2_wipe_block()

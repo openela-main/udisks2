@@ -1,0 +1,33 @@
+From d747e73aaec2c4e2cf124646230159e8b45a5da8 Mon Sep 17 00:00:00 2001
+From: Tomas Bzatek <tbzatek@redhat.com>
+Date: Tue, 5 Nov 2024 17:01:00 +0100
+Subject: [PATCH] lvm2: Try opening for unused device detection harder
+
+Though the voluntary BSD locks cannot be used here due to opening
+O_EXCL already, let's make several attempts before bailing out.
+---
+ modules/lvm2/udiskslvm2daemonutil.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/modules/lvm2/udiskslvm2daemonutil.c b/modules/lvm2/udiskslvm2daemonutil.c
+index b2131f9ca..32736d20f 100644
+--- a/modules/lvm2/udiskslvm2daemonutil.c
++++ b/modules/lvm2/udiskslvm2daemonutil.c
+@@ -65,9 +65,16 @@ udisks_daemon_util_lvm2_block_is_unused (UDisksBlock  *block,
+ {
+   const gchar *device_file;
+   int fd;
++  gint num_tries = 0;
+ 
+   device_file = udisks_block_get_device (block);
+-  fd = open (device_file, O_RDONLY | O_EXCL);
++
++  while ((fd = open (device_file, O_RDONLY | O_EXCL)) < 0)
++    {
++      g_usleep (100 * 1000); /* microseconds */
++      if (num_tries++ > 10)
++        break;
++    }
+   if (fd < 0)
+     {
+       g_set_error (error, UDISKS_ERROR, UDISKS_ERROR_FAILED,

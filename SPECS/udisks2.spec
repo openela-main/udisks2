@@ -23,7 +23,7 @@
 Name:    udisks2
 Summary: Disk Manager
 Version: 2.10.90
-Release: 5%{?dist}.1
+Release: 6%{?dist}
 License: GPL-2.0-or-later
 URL:     https://github.com/storaged-project/udisks
 Source0: https://github.com/storaged-project/udisks/releases/download/udisks-%{version}/udisks-%{version}.tar.bz2
@@ -32,7 +32,7 @@ Source0: https://github.com/storaged-project/udisks/releases/download/udisks-%{v
 Patch0:  udisks-2.11.0-lvm2-unused_device_detection-try_harder.patch
 # https://issues.redhat.com/browse/RHEL-74012
 Patch1:  udisks-2.11.0-mdraid-inhibit-locks.patch
-# https://issues.redhat.com/browse/RHEL-109405
+# https://issues.redhat.com/browse/RHEL-109406
 Patch2:  udisks-2.10.91-manager_loopsetup_fd_bounds.patch
 
 BuildRequires: make
@@ -341,8 +341,8 @@ fi
 %endif
 
 %changelog
-* Wed Aug 20 2025 Tomas Bzatek <tbzatek@redhat.com> - 2.10.90-5.1
-- udiskslinuxmanager: Add lower bounds check to fd_index (CVE-2025-8067) (RHEL-109405)
+* Tue Sep 02 2025 Tomas Bzatek <tbzatek@redhat.com> - 2.10.90-6
+- udiskslinuxmanager: Add lower bounds check to fd_index (CVE-2025-8067) (RHEL-109406)
 
 * Fri Jan 24 2025 Tomas Bzatek <tbzatek@redhat.com> - 2.10.90-5
 - mdraid: Avoid acquiring system inhibit lock for external array operations (RHEL-74012)

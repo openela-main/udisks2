@@ -23,7 +23,7 @@
 Name:    udisks2
 Summary: Disk Manager
 Version: 2.10.90
-Release: 6%{?dist}
+Release: 6%{?dist}.1
 License: GPL-2.0-or-later
 URL:     https://github.com/storaged-project/udisks
 Source0: https://github.com/storaged-project/udisks/releases/download/udisks-%{version}/udisks-%{version}.tar.bz2
@@ -34,6 +34,10 @@ Patch0:  udisks-2.11.0-lvm2-unused_device_detection-try_harder.patch
 Patch1:  udisks-2.11.0-mdraid-inhibit-locks.patch
 # https://issues.redhat.com/browse/RHEL-109406
 Patch2:  udisks-2.10.91-manager_loopsetup_fd_bounds.patch
+# https://issues.redhat.com/browse/RHEL-148565
+Patch3:  udisks-2.11.1-polkit_RestoreEncryptedHeader.patch
+# https://issues.redhat.com/browse/RHEL-148588
+Patch4:  udisks-2.11.1-polkit_HeaderBackup.patch
 
 BuildRequires: make
 BuildRequires: glib2-devel >= %{glib2_version}
@@ -341,6 +345,10 @@ fi
 %endif
 
 %changelog
+* Fri Feb 13 2026 Tomas Bzatek <tbzatek@redhat.com> - 2.10.90-6.1
+- Add missing polkit check for RestoreEncryptedHeader() (CVE-2026-26103) (RHEL-148565)
+- Add missing polkit check for HeaderBackup() (CVE-2026-26104) (RHEL-148588)
+
 * Tue Sep 02 2025 Tomas Bzatek <tbzatek@redhat.com> - 2.10.90-6
 - udiskslinuxmanager: Add lower bounds check to fd_index (CVE-2025-8067) (RHEL-109406)
 

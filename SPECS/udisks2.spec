@@ -4,7 +4,7 @@
 %global systemd_version                 208
 %global dbus_version                    1.4.0
 %global with_gtk_doc                    1
-%global libblockdev_version             3.2
+%global libblockdev_version             3.4
 
 %define with_btrfs                      1
 %define with_lsm                        1
@@ -22,22 +22,16 @@
 
 Name:    udisks2
 Summary: Disk Manager
-Version: 2.10.90
-Release: 6%{?dist}.1
+Version: 2.11.0
+Release: 2%{?dist}
 License: GPL-2.0-or-later
 URL:     https://github.com/storaged-project/udisks
 Source0: https://github.com/storaged-project/udisks/releases/download/udisks-%{version}/udisks-%{version}.tar.bz2
 
-# https://issues.redhat.com/browse/RHEL-39935
-Patch0:  udisks-2.11.0-lvm2-unused_device_detection-try_harder.patch
-# https://issues.redhat.com/browse/RHEL-74012
-Patch1:  udisks-2.11.0-mdraid-inhibit-locks.patch
-# https://issues.redhat.com/browse/RHEL-109406
-Patch2:  udisks-2.10.91-manager_loopsetup_fd_bounds.patch
-# https://issues.redhat.com/browse/RHEL-148565
-Patch3:  udisks-2.11.1-polkit_RestoreEncryptedHeader.patch
-# https://issues.redhat.com/browse/RHEL-148588
-Patch4:  udisks-2.11.1-polkit_HeaderBackup.patch
+# https://issues.redhat.com/browse/RHEL-148566
+Patch0:  udisks-2.11.1-polkit_RestoreEncryptedHeader.patch
+# https://issues.redhat.com/browse/RHEL-148590
+Patch1:  udisks-2.11.1-polkit_HeaderBackup.patch
 
 BuildRequires: make
 BuildRequires: glib2-devel >= %{glib2_version}
@@ -345,9 +339,14 @@ fi
 %endif
 
 %changelog
-* Fri Feb 13 2026 Tomas Bzatek <tbzatek@redhat.com> - 2.10.90-6.1
-- Add missing polkit check for RestoreEncryptedHeader() (CVE-2026-26103) (RHEL-148565)
-- Add missing polkit check for HeaderBackup() (CVE-2026-26104) (RHEL-148588)
+* Fri Feb 27 2026 Tomas Bzatek <tbzatek@redhat.com> - 2.11.0-2
+- Add missing polkit check for RestoreEncryptedHeader() (CVE-2026-26103) (RHEL-148566)
+- Add missing polkit check for HeaderBackup() (CVE-2026-26104) (RHEL-148590)
+
+* Thu Nov 06 2025 Tomas Bzatek <tbzatek@redhat.com> - 2.11.0-1
+- Version 2.11.0 (RHEL-114981)
+- tests: Rework nvme revision check (RHEL-90572)
+- tests: Adapt for missing fstab and crypttab (RHEL-78987)
 
 * Tue Sep 02 2025 Tomas Bzatek <tbzatek@redhat.com> - 2.10.90-6
 - udiskslinuxmanager: Add lower bounds check to fd_index (CVE-2025-8067) (RHEL-109406)

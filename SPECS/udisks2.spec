@@ -23,7 +23,7 @@
 Name:    udisks2
 Summary: Disk Manager
 Version: 2.11.0
-Release: 2%{?dist}
+Release: 2%{?dist}.1
 License: GPL-2.0-or-later
 URL:     https://github.com/storaged-project/udisks
 Source0: https://github.com/storaged-project/udisks/releases/download/udisks-%{version}/udisks-%{version}.tar.bz2
@@ -32,6 +32,8 @@ Source0: https://github.com/storaged-project/udisks/releases/download/udisks-%{v
 Patch0:  udisks-2.11.1-polkit_RestoreEncryptedHeader.patch
 # https://issues.redhat.com/browse/RHEL-148590
 Patch1:  udisks-2.11.1-polkit_HeaderBackup.patch
+# https://redhat.atlassian.net/browse/RHEL-173437
+Patch2:  udisks-2.11.2-mount_as_user_auth.patch
 
 BuildRequires: make
 BuildRequires: glib2-devel >= %{glib2_version}
@@ -339,6 +341,9 @@ fi
 %endif
 
 %changelog
+* Fri Jun 19 2026 Tomas Bzatek <tbzatek@redhat.com> - 2.11.0-2.1
+- Rework fstab mount authorization for as-user (CVE-2026-7867) (RHEL-173437)
+
 * Fri Feb 27 2026 Tomas Bzatek <tbzatek@redhat.com> - 2.11.0-2
 - Add missing polkit check for RestoreEncryptedHeader() (CVE-2026-26103) (RHEL-148566)
 - Add missing polkit check for HeaderBackup() (CVE-2026-26104) (RHEL-148590)

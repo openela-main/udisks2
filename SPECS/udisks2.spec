@@ -48,7 +48,7 @@
 Name:    udisks2
 Summary: Disk Manager
 Version: 2.9.4
-Release: 12%{?dist}
+Release: 15%{?dist}
 License: GPLv2+
 URL:     https://github.com/storaged-project/udisks
 Source0: https://github.com/storaged-project/udisks/releases/download/udisks-%{version}/udisks-%{version}.tar.bz2
@@ -92,6 +92,10 @@ Patch23: udisks-2.11.0-lvm2_refactor_wipe.patch
 Patch24: udisks-2.11.0-BLKRRPART-harder.patch
 # https://issues.redhat.com/browse/RHEL-109413
 Patch25: udisks-2.10.91-manager_loopsetup_fd_bounds.patch
+# https://issues.redhat.com/browse/RHEL-214046
+Patch26: udisks-2.12.0-fix-getting-bitmap-location.patch
+# mdraid-fix-error-null-dereference.patch
+Patch27: mdraid-fix-error-null-dereference.patch
 
 
 BuildRequires: make
@@ -468,6 +472,15 @@ fi
 %endif
 
 %changelog
+* Fri Sep 18 2026 Vojtech Trefny <vtrefny@redhat.com> - 2.9.4-15
+- Rebuild with correct tags for RHEL 9.9 (RHEL-257609)
+
+* Fri Sep 11 2026 Vojtech Trefny <vtrefny@redhat.com> - 2.9.4-14
+- udiskslinuxmdraid: Do not call bd_md_get_bitmap_location without error (RHEL-257609)
+
+* Sun Jul 26 2026 Vojtech Trefny <vtrefny@redhat.com> - 2.9.4-13
+- udiskslinuxmdraid: Fix getting bitmap location on latest kernels (RHEL-214046)
+
 * Tue Sep 02 2025 Tomas Bzatek <tbzatek@redhat.com> - 2.9.4-12
 - udiskslinuxmanager: Add lower bounds check to fd_index (CVE-2025-8067) (RHEL-109413)
 

@@ -1,0 +1,37 @@
+commit 42f1a7c66a1e40f8dddeb16fe5ff13fd86d563bf
+Author: Tomas Bzatek <tbzatek@redhat.com>
+Date:   Thu Feb 19 17:50:09 2026 +0100
+
+    udisksdaemonutil: Fix missing NULL terminator in resolve_links()
+    
+    Move the NULL sentinel addition after the out label so the returned
+    array is always properly NULL-terminated, even when g_dir_open()
+    fails. Also add the (array zero-terminated=1) introspection
+    annotation.
+    
+    Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+diff --git a/src/udisksdaemonutil.c b/src/udisksdaemonutil.c
+index 45f3d83c..3aebfdb1 100644
+--- a/src/udisksdaemonutil.c
++++ b/src/udisksdaemonutil.c
+@@ -484,7 +484,7 @@ udisks_daemon_util_resolve_link (const gchar *path,
+  * Resolves all symlinks in @path/@dir_name. This can be used to
+  * easily walk e.g. holders or slaves of block devices.
+  *
+- * Returns: An array of canonicalized absolute pathnames. Free with g_strfreev().
++ * Returns: (array zero-terminated=1): An array of canonicalized absolute pathnames. Free with g_strfreev().
+  */
+ gchar **
+ udisks_daemon_util_resolve_links (const gchar *path,
+@@ -508,9 +508,9 @@ udisks_daemon_util_resolve_links (const gchar *path,
+       if (resolved != NULL)
+         g_ptr_array_add (p, resolved);
+     }
+-  g_ptr_array_add (p, NULL);
+ 
+  out:
++  g_ptr_array_add (p, NULL);
+   if (dir != NULL)
+     g_dir_close (dir);
+   g_free (s);

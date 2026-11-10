@@ -22,18 +22,25 @@
 
 Name:    udisks2
 Summary: Disk Manager
-Version: 2.11.0
-Release: 2%{?dist}.1
+Version: 2.11.1
+Release: 2%{?dist}
 License: GPL-2.0-or-later
 URL:     https://github.com/storaged-project/udisks
 Source0: https://github.com/storaged-project/udisks/releases/download/udisks-%{version}/udisks-%{version}.tar.bz2
 
-# https://issues.redhat.com/browse/RHEL-148566
-Patch0:  udisks-2.11.1-polkit_RestoreEncryptedHeader.patch
-# https://issues.redhat.com/browse/RHEL-148590
-Patch1:  udisks-2.11.1-polkit_HeaderBackup.patch
-# https://redhat.atlassian.net/browse/RHEL-173437
-Patch2:  udisks-2.11.2-mount_as_user_auth.patch
+# https://issues.redhat.com/browse/RHEL-128598
+Patch0:  udisks-2.11.90-udisksdaemonutil_missing_NULL_terminator_in_resolve_links.patch
+# https://issues.redhat.com/browse/RHEL-144145
+Patch1:  udisks-2.11.90-udisksmodulemanager_Silence_warnings_on_module_not_found.patch
+Patch2:  udisks-2.11.90-tests_module_ENOENT.patch
+# https://issues.redhat.com/browse/RHEL-153132
+Patch3:  udisks-2.11.90-tests_sr_mod.patch
+# https://issues.redhat.com/browse/RHEL-173438
+# https://github.com/storaged-project/udisks/commit/39891417ff3cbbfb380bfcffb1d5272c0b40a04a
+# https://github.com/storaged-project/udisks/commit/fef8dbc46539c4b3d0098ca232abe799dae0b37b
+# https://github.com/storaged-project/udisks/commit/5d14b3846c8e9be8db368e6c3f23ddbd1af055e7
+# https://github.com/storaged-project/udisks/commit/a76016c118b678d94179fcb65f77bbf8d9b9c639
+Patch4:  udisks2-2.11.1-CVE-2026-7867.patch
 
 BuildRequires: make
 BuildRequires: glib2-devel >= %{glib2_version}
@@ -341,12 +348,17 @@ fi
 %endif
 
 %changelog
-* Fri Jun 19 2026 Tomas Bzatek <tbzatek@redhat.com> - 2.11.0-2.1
-- Rework fstab mount authorization for as-user (CVE-2026-7867) (RHEL-173437)
+* Thu Aug 13 2026 RHEL Packaging Agent <redhat-ymir-agent@redhat.com> - 2.11.1-2
+- udiskslinuxfilesystem: Fix as-user caller identity handling (CVE-2026-7867) (RHEL-173438)
 
-* Fri Feb 27 2026 Tomas Bzatek <tbzatek@redhat.com> - 2.11.0-2
-- Add missing polkit check for RestoreEncryptedHeader() (CVE-2026-26103) (RHEL-148566)
-- Add missing polkit check for HeaderBackup() (CVE-2026-26104) (RHEL-148590)
+* Mon Mar 09 2026 Tomas Bzatek <tbzatek@redhat.com> - 2.11.1-1
+- Version 2.11.1 (RHEL-150897)
+- udiskslinuxnvmecontroller: Fix sanitize job start (RHEL-69113)
+- udiskslinuxpartitiontable: Fix missing job completion (RHEL-124987)
+- udiskslinuxdevice: multipath handling fixes (RHEL-128598)
+- lvm2: Prevent a segfault on discarded probe output (RHEL-138293)
+- udisksmodulemanager: Silence console warnings when requested module is not available (RHEL-144145)
+- tests: Make sure to load sr_mod for cdrom tests (RHEL-153132)
 
 * Thu Nov 06 2025 Tomas Bzatek <tbzatek@redhat.com> - 2.11.0-1
 - Version 2.11.0 (RHEL-114981)

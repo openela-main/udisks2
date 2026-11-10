@@ -1,0 +1,38 @@
+commit 8a52370659b94faf12886c80ce08ef55e7bfa726
+Author: Tomas Bzatek <tbzatek@redhat.com>
+Date:   Mon Feb 23 14:56:53 2026 +0100
+
+    tests: Update expected error messages for unavailable modules
+    
+    Adapt the D-Bus test assertions to match the new "Module not available"
+    error message introduced by the g_access() check in
+    load_single_module_unlocked().
+    
+    Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+diff --git a/src/tests/dbus-tests/test_10_basic.py b/src/tests/dbus-tests/test_10_basic.py
+index f5c77521..97a2faf0 100644
+--- a/src/tests/dbus-tests/test_10_basic.py
++++ b/src/tests/dbus-tests/test_10_basic.py
+@@ -74,7 +74,7 @@ class UdisksBaseTest(udiskstestcase.UdisksTestCase):
+                 manager.EnableModule(module, dbus.Boolean(False))
+             manager.EnableModule(module, dbus.Boolean(True))
+         with self.assertRaisesRegex(dbus.exceptions.DBusException,
+-                                    r'cannot open shared object file: No such file or directory'):
++                                    r'Module not available: '):
+             manager.EnableModule("non-exist_ent", dbus.Boolean(True))
+         with self.assertRaisesRegex(dbus.exceptions.DBusException,
+                                     r'Module unloading is not currently supported.'):
+diff --git a/src/tests/dbus-tests/udiskstestcase.py b/src/tests/dbus-tests/udiskstestcase.py
+index 4e802f40..eef8e8ff 100644
+--- a/src/tests/dbus-tests/udiskstestcase.py
++++ b/src/tests/dbus-tests/udiskstestcase.py
+@@ -428,7 +428,7 @@ class UdisksTestCase(unittest.TestCase):
+             manager.EnableModule(module, dbus.Boolean(True))
+             return True
+         except dbus.exceptions.DBusException as e:
+-            msg = r"Error initializing module '%s': .*\.so: cannot open shared object file: No such file or directory" % module
++            msg = r"Error initializing module '%s': Module not available: " % module
+             if re.search(msg, e.get_dbus_message()):
+                 return False
+             else:

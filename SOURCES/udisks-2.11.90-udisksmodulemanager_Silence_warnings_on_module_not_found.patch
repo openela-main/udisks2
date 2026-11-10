@@ -1,0 +1,76 @@
+commit 59d988f0f45bb83e3075e5404f3aef647e5d84e4
+Author: Tomas Bzatek <tbzatek@redhat.com>
+Date:   Thu Feb 19 19:14:58 2026 +0100
+
+    udisksmodulemanager: Silence console warnings when requested module is not available
+    
+    Don't pollute stderr with messages about modules that are not available,
+    but still return the error from the D-Bus method call.
+    
+    The original intention behind the org.freedesktop.UDisks2.Manager.EnableModule()
+    method was to attempt to load a module and let the caller handle the error.
+    Reporting an error by the daemon that the module is unavailable may result
+    in excessive and mostly useless messages logged in the syslog.
+    
+    Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+diff --git a/src/udiskslinuxmanager.c b/src/udiskslinuxmanager.c
+index 6143507e..2597a3e6 100644
+--- a/src/udiskslinuxmanager.c
++++ b/src/udiskslinuxmanager.c
+@@ -934,8 +934,12 @@ load_modules_in_idle_cb (gpointer user_data)
+       /* Load single requested module */
+       if (! udisks_module_manager_load_single_module (module_manager, data->module_name, &error))
+         {
++          if (g_error_matches (error, UDISKS_ERROR, UDISKS_ERROR_NOT_SUPPORTED))
++            /* Module not available, change to UDISKS_ERROR_FAILED for backwards compatibility */
++            error->code = UDISKS_ERROR_FAILED;
++          else
++            g_warning ("Error initializing module '%s': %s", data->module_name, error->message);
+           g_prefix_error (&error, "Error initializing module '%s': ", data->module_name);
+-          g_warning ("%s", error->message);
+           g_dbus_method_invocation_take_error (data->invocation, error);
+         }
+       else
+diff --git a/src/udisksmodulemanager.c b/src/udisksmodulemanager.c
+index 8d9df818..db320b0f 100644
+--- a/src/udisksmodulemanager.c
++++ b/src/udisksmodulemanager.c
+@@ -31,6 +31,7 @@
+ 
+ #include <glib.h>
+ #include <glib-object.h>
++#include <glib/gstdio.h>
+ #include <gmodule.h>
+ 
+ #include "udisksdaemon.h"
+@@ -295,6 +296,17 @@ load_single_module_unlocked (UDisksModuleManager *manager,
+   UDisksModuleNewFunc module_new_func;
+   UDisksModule *module;
+ 
++  /* Unfortunately error reporting from dlopen() is done through dlerror() which
++   * only returns a string - no errno set (or at least not officially documented).
++   * Thus perform this extra check in a slightly racy way.
++   */
++  if (g_access (sopath, R_OK) != 0)
++    {
++      g_set_error (error, UDISKS_ERROR, UDISKS_ERROR_NOT_SUPPORTED,
++                   "Module not available: %s", sopath);
++      return FALSE;
++    }
++
+   handle = g_module_open (sopath, 0);
+   if (handle == NULL)
+     {
+@@ -450,8 +462,9 @@ udisks_module_manager_load_modules (UDisksModuleManager *manager)
+                                          &do_notify,
+                                          &error))
+         {
+-          udisks_critical ("Error loading module: %s",
+-                           error->message);
++          if (! g_error_matches (error, UDISKS_ERROR, UDISKS_ERROR_NOT_SUPPORTED))
++            udisks_critical ("Error loading module: %s",
++                             error->message);
+           g_clear_error (&error);
+           continue;
+         }
